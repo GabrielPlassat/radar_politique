@@ -205,8 +205,8 @@ onglets = st.tabs(["🔔 Nouveautés", "📋 Textes", "🔎 Fiche texte", "🗓�
 with onglets[0]:
     c1, c2, c3 = st.columns([1, 2, 2])
     jours = c1.selectbox("Période", [7, 14, 30, 90], index=0, format_func=lambda j: f"{j} derniers jours")
-    cats = c2.multiselect("Catégorie", CATEGORIES, default=CATEGORIES)
-    them = c3.multiselect("Thème", themes_de(textes))
+    cats = c2.multiselect("Catégorie", CATEGORIES, default=CATEGORIES, key="nouv_cat")
+    them = c3.multiselect("Thème", themes_de(textes), key="nouv_themes")
     seuil = (dt.date.today() - dt.timedelta(days=jours)).isoformat()
     ev = evenements[(evenements["date_detection"] >= seuil) & (evenements["evenement"] != "Initialisation")
                     & (evenements["categorie"].isin(cats))]
@@ -233,9 +233,9 @@ with onglets[0]:
 # ---------------------------------------------------------------- 2. Textes (+ annotations)
 with onglets[1]:
     c1, c2, c3, c4 = st.columns(4)
-    f_cat = c1.multiselect("Catégorie ", CATEGORIES)
+    f_cat = c1.multiselect("Catégorie", CATEGORIES, key="textes_cat")
     f_stat = c2.multiselect("Statut", STATUTS)
-    f_them = c3.multiselect("Thème ", themes_de(textes))
+    f_them = c3.multiselect("Thème", themes_de(textes), key="textes_themes")
     f_src = c4.multiselect("Source", sorted(textes["source"].unique()))
     c5, c6 = st.columns([3, 1])
     f_txt = c5.text_input("Recherche dans le titre")
@@ -335,11 +335,12 @@ with onglets[2]:
 with onglets[3]:
     st.caption("Prépare la slide « Actu réglementaire » : ce qui a bougé sur la période, "
                "classé comme dans le deck (Exécutif / Législatif / Europe × statut).")
-    c1, c2, c3, c4 = st.columns([1, 1, 2, 1])
-    fin = c2.date_input("Au", dt.date.today())
-    debut = c1.date_input("Du", fin - dt.timedelta(days=30))
-    s_them = c3.multiselect("Thème  ", themes_de(textes))
-    seulement_suivis = c4.toggle("Seulement les textes suivis", value=False)
+    c1, c2, c3 = st.columns([1, 1, 1])
+    fin = c2.date_input("Au", dt.date.today(), key="synth_fin")
+    debut = c1.date_input("Du", fin - dt.timedelta(days=30), key="synth_debut")
+    seulement_suivis = c3.toggle("Seulement les textes suivis", value=False, key="synth_suivis")
+    s_them = st.multiselect("🎯 Filtrer la synthèse par thème (vide = tous les thèmes)", themes_de(textes),
+                            key="synth_themes")
     a = annotations().set_index("id")
     # Un texte « a bougé » si sa dernière étape (ou sa publication) date de la période,
     # ou si le radar a détecté un changement pendant la période.
@@ -355,6 +356,8 @@ with onglets[3]:
     sel = sel.sort_values("date_etape", ascending=False)
 
     lignes = [f"# Actu réglementaire — du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}", ""]
+    if s_them:
+        lignes += [f"*Thème(s) : {', '.join(s_them)}*", ""]
     for cat in CATEGORIES:
         bloc = sel[sel["categorie"] == cat]
         if bloc.empty:
@@ -376,6 +379,7 @@ with onglets[3]:
                 lignes.append(f"  - Lien : {x['url']}")
             lignes.append("")
     md = "\n".join(lignes)
-    st.caption(f"{len(sel)} textes ont bougé sur la période (étape ou publication datée de la période).")
+    st.caption(f"{len(sel)} textes ont bougé sur la période (étape ou publication datée de la période)"
+               + (f", pour : {', '.join(s_them)}." if s_them else ", tous thèmes confondus."))
     st.download_button("⬇️ Télécharger la synthèse (Markdown)", md, f"actu_reglementaire_{fin:%Y-%m}.md")
     st.markdown(md)
