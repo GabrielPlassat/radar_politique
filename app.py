@@ -131,7 +131,10 @@ def a_un_theme(colonne: pd.Series, choisis: list[str]) -> pd.Series:
 
 
 def themes_de(df: pd.DataFrame) -> list[str]:
-    return sorted({t.strip() for s in df["themes"].fillna("") for t in s.split(";") if t.strip()})
+    """Tous les thèmes de la config (même sans texte pour l'instant), puis ceux présents dans les données."""
+    presents = {t.strip() for s in df["themes"].fillna("") for t in s.split(";") if t.strip()}
+    config = [t["nom"] for t in charger_config()["themes"]]
+    return config + sorted(presents - set(config))
 
 
 def lien(url: str, texte: str = "ouvrir") -> str:
@@ -332,18 +335,24 @@ with onglets[2]:
 with onglets[3]:
     st.caption("Prépare la slide « Actu réglementaire » : ce qui a bougé sur la période, "
                "classé comme dans le deck (Exécutif / Législatif / Europe × statut).")
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns([1, 1, 2, 1])
     fin = c2.date_input("Au", dt.date.today())
     debut = c1.date_input("Du", fin - dt.timedelta(days=30))
-    seulement_suivis = c3.toggle("Seulement les textes suivis", value=False)
+    s_them = c3.multiselect("Thème  ", themes_de(textes))
+    seulement_suivis = c4.toggle("Seulement les textes suivis", value=False)
     a = annotations().set_index("id")
-    ev = evenements[(evenements["date_detection"] >= debut.isoformat())
-                    & (evenements["date_detection"] <= fin.isoformat())
+    # Un texte « a bougé » si sa dernière étape (ou sa publication) date de la période,
+    # ou si le radar a détecté un changement pendant la période.
+    d_deb, d_fin = debut.isoformat(), fin.isoformat()
+    par_date = textes["date_etape"].between(d_deb, d_fin)
+    ev = evenements[evenements["date_detection"].between(d_deb, d_fin)
                     & (evenements["evenement"] != "Initialisation")]
-    ids = list(dict.fromkeys(ev["id"]))
+    sel = textes[par_date | textes["id"].isin(ev["id"])]
+    if s_them:
+        sel = sel[a_un_theme(sel["themes"], s_them)]
     if seulement_suivis:
-        ids = [i for i in ids if i in a.index and a.loc[i, "suivi"]]
-    sel = textes[textes["id"].isin(ids)]
+        sel = sel[sel["id"].map(lambda i: i in a.index and bool(a.loc[i, "suivi"]))]
+    sel = sel.sort_values("date_etape", ascending=False)
 
     lignes = [f"# Actu réglementaire — du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}", ""]
     for cat in CATEGORIES:
@@ -367,6 +376,6 @@ with onglets[3]:
                 lignes.append(f"  - Lien : {x['url']}")
             lignes.append("")
     md = "\n".join(lignes)
-    st.caption(f"{len(sel)} textes ont bougé sur la période.")
+    st.caption(f"{len(sel)} textes ont bougé sur la période (étape ou publication datée de la période).")
     st.download_button("⬇️ Télécharger la synthèse (Markdown)", md, f"actu_reglementaire_{fin:%Y-%m}.md")
     st.markdown(md)

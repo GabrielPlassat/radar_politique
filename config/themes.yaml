@@ -55,12 +55,16 @@ themes:
            vélo-cargo, vélos-cargos, piéton, piétons, aménagements cyclables]
     ademe: ["vélo", "cyclable", "mobilités actives"]
 
-  - nom: Véhicules intermédiaires (vélis)
+  - nom: Véhicules intermédiaires (vélis, catégorie L)
     poids: 2
     mots: [véhicule intermédiaire, véhicules intermédiaires, véli, vélis, quadricycle,
-           quadricycles, voiturette, voiturettes, l6, l7, véhicule léger, véhicules légers,
-           voiture sans permis, voitures sans permis]
-    ademe: ["véhicule intermédiaire", "eXtrême Défi", "véhicules légers"]
+           quadricycles, quadricycle léger, quadricycles légers, voiturette, voiturettes,
+           microvoiture, microvoitures, voiture sans permis, voitures sans permis, sans permis,
+           véhicule léger, véhicules légers, véhicule léger électrique, véhicules légers électriques,
+           catégorie l, catégories l, véhicules de catégorie l, l1e, l2e, l3e, l5e, l6e, l7e, l6, l7,
+           deux-roues motorisé, deux-roues motorisés, deux roues motorisés, cyclomoteur, cyclomoteurs,
+           tricycle, tricycles, vélomobile, vélomobiles, engins de déplacement personnel motorisés, edpm]
+    ademe: ["véhicule intermédiaire", "eXtrême Défi", "véhicules légers", "vélomobile"]
 
   - nom: Carburants alternatifs et fiscalité énergie
     poids: 2
@@ -164,6 +168,8 @@ sources:
       aviation: Aérien
       maritime: Maritime et fluvial
       rail: Ferroviaire
+      L-category vehicles: Véhicules intermédiaires (vélis, catégorie L)
+      two- or three-wheel vehicles and quadricycles: Véhicules intermédiaires (vélis, catégorie L)
       urban mobility: Mobilité (général)
       combined transport: Poids lourds, fret et logistique
       renewable fuels: Carburants alternatifs et fiscalité énergie

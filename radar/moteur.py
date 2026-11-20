@@ -48,6 +48,7 @@ class Classifieur:
         self.themes = [(t["nom"], int(t.get("poids", 2)), _motif(t.get("mots"))) for t in cfg["themes"]]
         self.exclusion = _motif(cfg.get("exclusions"))
         self.seuils = cfg.get("score_minimum", {})
+        self.renommages = {"Véhicules intermédiaires (vélis)": "Véhicules intermédiaires (vélis, catégorie L)"}
 
     def analyser(self, texte: str) -> tuple[list[str], int, bool]:
         t = (texte or "").lower().replace("’", "'")
@@ -130,13 +131,30 @@ def fusionner(anciens: pd.DataFrame, nouveaux: list[dict],
     return df, evenements
 
 
+def reclasser(df: pd.DataFrame, clf: Classifieur) -> pd.DataFrame:
+    """Recalcule thèmes et score des textes déjà stockés avec les mots-clés actuels.
+    Les textes ne sont jamais retirés ; pour la Commission UE, le thème attribué par la recherche est gardé."""
+    if df.empty:
+        return df
+    df = df.copy()
+    for i, r in df.iterrows():
+        themes, score, _ = clf.analyser(f"{r['titre']} {str(r.get('resume', ''))[:300]}")
+        if r["source"] == "Commission UE" and r.get("themes"):
+            premier = str(r["themes"]).split(" ; ")[0]
+            premier = clf.renommages.get(premier, premier)
+            themes = [premier] + [t for t in themes if t != premier]
+        df.at[i, "themes"] = " ; ".join(themes)
+        df.at[i, "score"] = str(score)
+    return df
+
+
 # ---------------------------------------------------------------- collecte complète
 def lancer_collecte(sources: list[str] | None = None, cfg: dict | None = None,
                     jours_jorf: int | None = None) -> dict:
     cfg = cfg or charger_config()
     clf = Classifieur(cfg)
     aujourd_hui = dt.date.today().isoformat()
-    anciens = lire_csv(F_TEXTES, COLONNES_TEXTES)
+    anciens = reclasser(lire_csv(F_TEXTES, COLONNES_TEXTES), clf)
     sources_connues = set(anciens["source"])
 
     retenus, journal = [], []
