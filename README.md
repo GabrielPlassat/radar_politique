@@ -21,7 +21,11 @@ Chaque texte reçoit un **statut** identique à celui du deck (En projet / En vo
 ## Mise en route (sans droits d'administrateur, tout dans le navigateur)
 
 ### 1. Dépôt GitHub
-Le code est sur https://github.com/GabrielPlassat/radar_politique. Le passer en **Private** est recommandé (Settings › Danger zone › Change visibility), car les annotations de l'équipe y seront stockées.
+Le code est sur https://github.com/GabrielPlassat/radar_politique (dépôt **public** pour démarrer).
+
+⚠️ Dépôt public = tout ce qui est enregistré dans `data/` est visible de tous, y compris `annotations.csv`.
+Les textes collectés sont publics, mais **ne pas écrire de notes internes sensibles** dans les colonnes « Responsable » et « À suivre ».
+Pour des notes confidentielles : passer le dépôt en privé (une seule app privée gratuite sur Streamlit), ou déplacer les annotations vers un Google Sheet.
 
 ### 2. Lancer la première collecte
 1. Onglet **Actions** → activer les workflows si GitHub le demande.
@@ -32,7 +36,7 @@ La première collecte remplit le radar ; ses textes sont marqués « Initialisat
 
 ### 3. Publier l'application (Streamlit Community Cloud)
 1. share.streamlit.io → **New app** → choisir le dépôt, fichier `app.py` → **Deploy**.
-2. Dans les réglages de l'app, **Sharing** : limiter l'accès aux adresses de l'équipe.
+2. Avec un dépôt public, l'app est accessible à toute personne qui a le lien.
 3. *(Facultatif, mais recommandé)* Pour que le bouton « Enregistrer mes annotations » écrive directement dans GitHub :
    - GitHub › Settings › Developer settings › **Fine-grained tokens** › Generate : accès au seul dépôt `radar_politique`, permission **Contents : Read and write**.
    - Streamlit › app › Settings › **Secrets** :
