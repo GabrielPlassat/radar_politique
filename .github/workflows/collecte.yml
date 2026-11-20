@@ -1,0 +1,43 @@
+# Collecte automatique : du lundi au vendredi à 6h47 (heure de Paris), sans rien installer.
+# Lancement manuel : onglet « Actions » du dépôt > « Collecte radar » > « Run workflow ».
+name: Collecte radar
+
+on:
+  schedule:
+    - cron: "47 4 * * 1-5"   # 4h47 UTC ≈ 5h47 en hiver / 6h47 en été
+  workflow_dispatch:
+    inputs:
+      jours_jorf:
+        description: "Jours de Journal officiel à relire (vide = réglage par défaut)"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  collecte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Collecte
+        run: |
+          if [ -n "${{ github.event.inputs.jours_jorf }}" ]; then
+            python collecte.py --jours-jorf "${{ github.event.inputs.jours_jorf }}"
+          else
+            python collecte.py
+          fi
+      - name: Enregistrer les résultats
+        run: |
+          git config user.name "radar-stm"
+          git config user.email "radar-stm@users.noreply.github.com"
+          git add data/textes.csv data/evenements.csv data/journal_collecte.csv
+          if git diff --cached --quiet; then echo "Aucun changement"; exit 0; fi
+          git commit -m "Collecte du $(date +%Y-%m-%d)"
+          git pull --rebase --autostash
+          git push

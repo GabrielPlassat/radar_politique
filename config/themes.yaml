@@ -1,0 +1,166 @@
+# =====================================================================
+#  RADAR POLITIQUES PUBLIQUES — SERVICE TRANSPORT ET MOBILITÉ (STM)
+#  Ce fichier se modifie directement dans GitHub (crayon ✏️ en haut à droite).
+#  Règles :
+#   - "mots" : mots ou expressions cherchés dans le titre des textes
+#     (minuscules, accents conservés, singulier ET pluriel si besoin).
+#   - "poids" : 2 = thème spécifique STM, 1 = thème large (mobilité en général).
+#   - "ademe" : 2 à 4 expressions pour chercher les projets déjà financés
+#     par l'ADEME (jeu « Les aides financières de l'ADEME »).
+# =====================================================================
+
+themes:
+  - nom: ZFE et qualité de l'air
+    poids: 2
+    mots: [zone à faibles émissions, zones à faibles émissions, zfe, zfe-m, qualité de l'air]
+    ademe: ["zone à faibles émissions", "qualité de l'air"]
+
+  - nom: Électrification des véhicules
+    poids: 2
+    mots: [véhicule électrique, véhicules électriques, voiture électrique, voitures électriques,
+           électrification, bonus écologique, leasing social, location sociale,
+           prime à la conversion, batterie, batteries]
+    ademe: ["véhicules électriques", "électrification"]
+
+  - nom: Recharge électrique
+    poids: 2
+    mots: [borne de recharge, bornes de recharge, infrastructure de recharge,
+           infrastructures de recharge, irve, recharge électrique, points de recharge]
+    ademe: ["bornes de recharge", "stations de recharge"]
+
+  - nom: Poids lourds, fret et logistique
+    poids: 2
+    mots: [poids lourd, poids lourds, transport routier de marchandises, fret, logistique,
+           chargeur, chargeurs, transporteur, transporteurs, eurovignette, livraison,
+           livraisons, petits colis, véhicule utilitaire, véhicules utilitaires, vul]
+    ademe: ["poids lourds", "logistique", "fret"]
+
+  - nom: Ferroviaire
+    poids: 2
+    mots: [ferroviaire, ferroviaires, train, trains, réseau ferré, sncf, matériel roulant,
+           trains express régionaux, petites lignes, train de nuit, trains de nuit, wagon isolé]
+    ademe: ["ferroviaire", "report modal"]
+
+  - nom: Transports collectifs
+    poids: 2
+    mots: [autobus, autocar, autocars, transport public, transports publics,
+           transports collectifs, transport collectif, autorité organisatrice de la mobilité,
+           autorités organisatrices de la mobilité, versement mobilité, transport de voyageurs]
+    ademe: ["transport collectif", "autobus"]
+
+  - nom: Vélo et mobilités actives
+    poids: 2
+    mots: [vélo, vélos, cyclable, cyclables, cycliste, cyclistes, mobilités actives,
+           vélo-cargo, vélos-cargos, piéton, piétons, aménagements cyclables]
+    ademe: ["vélo", "cyclable", "mobilités actives"]
+
+  - nom: Véhicules intermédiaires (vélis)
+    poids: 2
+    mots: [véhicule intermédiaire, véhicules intermédiaires, véli, vélis, quadricycle,
+           quadricycles, voiturette, voiturettes, l6, l7, véhicule léger, véhicules légers]
+    ademe: ["véhicule intermédiaire", "eXtrême Défi", "véhicules légers"]
+
+  - nom: Carburants alternatifs et fiscalité énergie
+    poids: 2
+    mots: [biocarburant, biocarburants, carburant, carburants, hvo, b100, e85, biognv, gnv,
+           hydrogène, e-fuels, tiruert, iricc, ticpe, accise, accises, biogaz]
+    ademe: ["biocarburant", "bioGNV", "hydrogène mobilité"]
+
+  - nom: Aérien
+    poids: 2
+    mots: [aérien, aérienne, aériens, aviation, aéroport, aéroports, refueleu,
+           kérosène, transport aérien, billets d'avion]
+    ademe: ["aviation", "aérien"]
+
+  - nom: Maritime et fluvial
+    poids: 2
+    mots: [maritime, maritimes, fluvial, fluviale, fluviaux, navire, navires, vélique,
+           portuaire, portuaires, transport fluvial]
+    ademe: ["propulsion vélique", "navire", "fluvial"]
+
+  - nom: Marché carbone et fiscalité climat
+    poids: 2
+    mots: [ets, ets2, ets 2, marché carbone, système d'échange de quotas, quotas d'émission,
+           malus, taxe carbone, cbam, mécanisme d'ajustement carbone aux frontières]
+    ademe: []
+
+  - nom: CEE (certificats d'économies d'énergie)
+    poids: 2
+    mots: [certificats d'économies d'énergie, certificat d'économies d'énergie, cee]
+    ademe: ["programme CEE"]
+
+  - nom: Planification et stratégie climat
+    poids: 2
+    mots: [programmation pluriannuelle de l'énergie, ppe, stratégie nationale bas-carbone,
+           snbc, planification écologique, loi de programmation, sdmp]
+    ademe: []
+
+  - nom: Mobilité (général)
+    poids: 1
+    mots: [mobilité, mobilités, transport, transports, covoiturage, autopartage, déplacements,
+           flotte, flottes, automobile, automobiles, voiture, voitures, véhicule, véhicules,
+           infrastructures de transport, routes, routier, routière]
+    ademe: ["mobilité"]
+
+  - nom: ADEME
+    poids: 2
+    mots: [ademe, agence de l'environnement et de la maîtrise de l'énergie,
+           agence de la transition écologique]
+    ademe: []
+
+# Textes ignorés si leur titre contient l'une de ces expressions
+# (surtout pour le Journal officiel : nominations, carrières, décorations…)
+exclusions: [portant nomination, nomination, nominations, tableau d'avancement,
+             admission à la retraite, promotion, concours, jury, inscription au tableau,
+             cessation de fonctions, détachement, médaille, ordre national, légion d'honneur,
+             délégation de signature, habilitation, agrément, conventions collectives,
+             convention collective, extension d'un avenant, extension d'avenants]
+
+# Score minimum pour retenir un texte, par source.
+# Score = somme des poids des thèmes trouvés (thème spécifique = 2, large = 1).
+# Le Journal officiel publie beaucoup : on exige au moins un thème spécifique.
+score_minimum:
+  AN: 1
+  Sénat: 1
+  JORF: 2
+  Consultations MTE: 1
+  Commission UE: 0
+
+sources:
+  an:
+    actif: true
+    url_dossiers: https://data.assemblee-nationale.fr/static/openData/repository/17/loi/dossiers_legislatifs/Dossiers_Legislatifs.json.zip
+    url_deputes: https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_actifs_mandats_actifs_organes/AMO10_deputes_actifs_mandats_actifs_organes.json.zip
+    # On ignore les dossiers sans aucune activité depuis cette date
+    activite_depuis: "2025-01-01"
+  senat:
+    actif: true
+    flux:
+      - https://www.senat.fr/rss/textes.rss
+      - https://www.senat.fr/rss/rapports.rss
+  jorf:
+    actif: true
+    url: https://echanges.dila.gouv.fr/OPENDATA/JORF/
+    # Nombre de jours relus à chaque collecte (30 au premier lancement)
+    jours: 10
+  consultations_mte:
+    actif: true
+    flux:
+      - https://www.consultations-publiques.developpement-durable.gouv.fr/spip.php?page=backend
+  commission_ue:
+    actif: true
+    url: https://ec.europa.eu/info/law/better-regulation/brpapi/searchInitiatives
+    # Recherches lancées sur « Have your say » (en anglais : l'API répond mieux)
+    # recherche -> thème STM attribué
+    recherches:
+      road transport: Poids lourds, fret et logistique
+      CO2 emission standards vehicles: Électrification des véhicules
+      batteries: Électrification des véhicules
+      alternative fuels infrastructure: Recharge électrique
+      emissions trading: Marché carbone et fiscalité climat
+      aviation: Aérien
+      maritime: Maritime et fluvial
+      rail: Ferroviaire
+      urban mobility: Mobilité (général)
+      combined transport: Poids lourds, fret et logistique
+      renewable fuels: Carburants alternatifs et fiscalité énergie
