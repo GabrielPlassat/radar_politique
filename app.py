@@ -104,6 +104,11 @@ cfg = charger_config()
 
 # ---------------------------------------------------------------- en-tête
 st.title("📡 Radar politiques publiques — Transport et Mobilité")
+_derniere = journal["date"].max() if not journal.empty else "—"
+st.info(f"🔄 Les textes sont mis à jour **automatiquement chaque matin, du lundi au vendredi (vers 6 h)**, "
+        f"par une collecte lancée depuis le [dépôt GitHub](https://github.com/GabrielPlassat/radar_politique) "
+        f"(Assemblée nationale, Sénat, Journal officiel, consultations du ministère, Commission européenne). "
+        f"Dernière collecte : **{_derniere}**.")
 if textes.empty:
     st.warning("Aucune donnée pour l'instant. Lancez une première collecte (`python collecte.py`, "
                "notebook Colab ou action GitHub « Collecte »).")
