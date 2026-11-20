@@ -69,6 +69,11 @@ def aides_en_cache(expressions: tuple) -> pd.DataFrame:
     return chercher_aides(list(expressions))
 
 
+def a_un_theme(colonne: pd.Series, choisis: list[str]) -> pd.Series:
+    """Masque booléen : vrai si la ligne porte au moins un des thèmes choisis (sûr même si vide)."""
+    return colonne.fillna("").map(lambda s: any(t in s for t in choisis)).astype(bool)
+
+
 def themes_de(df: pd.DataFrame) -> list[str]:
     return sorted({t.strip() for s in df["themes"].fillna("") for t in s.split(";") if t.strip()})
 
@@ -114,7 +119,7 @@ with onglets[0]:
     ev = evenements[(evenements["date_detection"] >= seuil) & (evenements["evenement"] != "Initialisation")
                     & (evenements["categorie"].isin(cats))]
     if them:
-        ev = ev[ev["themes"].apply(lambda s: any(t in s for t in them))]
+        ev = ev[a_un_theme(ev["themes"], them)]
     suivis = set(annotations().loc[annotations()["suivi"], "id"])
     st.caption(f"{len(ev)} événements depuis le {seuil}. ⭐ = texte marqué « suivi ».")
     if ev.empty:
@@ -152,7 +157,7 @@ with onglets[1]:
     if f_cat: vue = vue[vue["categorie"].isin(f_cat)]
     if f_stat: vue = vue[vue["statut"].isin(f_stat)]
     if f_src: vue = vue[vue["source"].isin(f_src)]
-    if f_them: vue = vue[vue["themes"].apply(lambda s: any(t in s for t in f_them))]
+    if f_them: vue = vue[a_un_theme(vue["themes"], f_them)]
     if f_txt: vue = vue[vue["titre"].str.contains(f_txt, case=False, regex=False)]
     if f_suivi: vue = vue[vue["suivi"]]
     vue["score"] = pd.to_numeric(vue["score"], errors="coerce")

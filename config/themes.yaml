@@ -18,6 +18,7 @@ themes:
   - nom: Électrification des véhicules
     poids: 2
     mots: [véhicule électrique, véhicules électriques, voiture électrique, voitures électriques,
+           automobile électrique, automobiles électriques,
            électrification, bonus écologique, leasing social, location sociale,
            prime à la conversion, batterie, batteries]
     ademe: ["véhicules électriques", "électrification"]
@@ -57,7 +58,8 @@ themes:
   - nom: Véhicules intermédiaires (vélis)
     poids: 2
     mots: [véhicule intermédiaire, véhicules intermédiaires, véli, vélis, quadricycle,
-           quadricycles, voiturette, voiturettes, l6, l7, véhicule léger, véhicules légers]
+           quadricycles, voiturette, voiturettes, l6, l7, véhicule léger, véhicules légers,
+           voiture sans permis, voitures sans permis]
     ademe: ["véhicule intermédiaire", "eXtrême Défi", "véhicules légers"]
 
   - nom: Carburants alternatifs et fiscalité énergie
@@ -114,7 +116,8 @@ exclusions: [portant nomination, nomination, nominations, tableau d'avancement,
              admission à la retraite, promotion, concours, jury, inscription au tableau,
              cessation de fonctions, détachement, médaille, ordre national, légion d'honneur,
              délégation de signature, habilitation, agrément, conventions collectives,
-             convention collective, extension d'un avenant, extension d'avenants]
+             convention collective, extension d'un avenant, extension d'avenants,
+             pêche maritime, code rural]
 
 # Score minimum pour retenir un texte, par source.
 # Score = somme des poids des thèmes trouvés (thème spécifique = 2, large = 1).
