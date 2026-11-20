@@ -21,8 +21,13 @@ PRIORITES = ["", "Haute", "Moyenne", "Basse"]
 
 
 # ---------------------------------------------------------------- données
+def version_donnees() -> str:
+    """Change dès qu'un fichier de données change : le cache est alors ignoré."""
+    return "|".join(str(f.stat().st_mtime) if f.exists() else "-" for f in (F_TEXTES, F_EVENEMENTS, F_JOURNAL))
+
+
 @st.cache_data(ttl=600)
-def charger():
+def charger(version: str = ""):  # noqa: ARG001 — sert de clé de cache
     textes = lire_csv(F_TEXTES, COLONNES_TEXTES)
     ev = lire_csv(F_EVENEMENTS, COLONNES_EVENEMENTS)
     jr = lire_csv(F_JOURNAL, ["date", "source", "etat", "lus", "retenus", "message"])
@@ -141,7 +146,7 @@ def lien(url: str, texte: str = "ouvrir") -> str:
     return f"[{texte}]({url})" if url else ""
 
 
-textes, evenements, journal = charger()
+textes, evenements, journal = charger(version_donnees())
 cfg = charger_config()
 
 # ---------------------------------------------------------------- en-tête

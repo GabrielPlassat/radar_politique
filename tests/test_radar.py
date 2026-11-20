@@ -66,6 +66,7 @@ def test_dossier_an():
 
 def test_statuts():
     assert S.statut_depuis_codes(["AN1-DEPOT"], "") == "En projet"
+    assert S.statut_depuis_codes(["AN1-DEPOT", "AN1-COM-FOND-SAISIE"], "") == "En projet"
     assert S.statut_depuis_codes(["AN1-DEPOT", "PROM-PUB"], "") == "Publié / voté"
     assert S.statut_depuis_codes(["AN1-DEPOT", "AN1-DEBATS-DEC"], "rejeté") == "Abandonné ou rejeté"
 

@@ -109,7 +109,8 @@ def statut_depuis_codes(codes: list[str], derniere_conclusion: str) -> str:
         return "Publié / voté"
     if any("RETRAIT" in c for c in codes_maj) or "rejet" in (derniere_conclusion or "").lower():
         return "Abandonné ou rejeté"
-    if all(c.endswith("DEPOT") for c in codes_maj) or len(codes_maj) <= 1:
+    # Dépôt et renvoi en commission (automatique) : le texte n'a pas encore été examiné
+    if all(c.endswith("DEPOT") or c.endswith("-SAISIE") for c in codes_maj) or len(codes_maj) <= 1:
         return "En projet"
     return "En voie d'adoption"
 
