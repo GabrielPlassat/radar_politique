@@ -154,6 +154,11 @@ def lancer_collecte(sources: list[str] | None = None, cfg: dict | None = None,
     cfg = cfg or charger_config()
     clf = Classifieur(cfg)
     aujourd_hui = dt.date.today().isoformat()
+    try:
+        from zoneinfo import ZoneInfo
+        heure = dt.datetime.now(ZoneInfo("Europe/Paris")).strftime("%H:%M")
+    except Exception:  # noqa: BLE001
+        heure = dt.datetime.now().strftime("%H:%M")
     anciens = reclasser(lire_csv(F_TEXTES, COLONNES_TEXTES), clf)
     sources_connues = set(anciens["source"])
 
@@ -171,11 +176,11 @@ def lancer_collecte(sources: list[str] | None = None, cfg: dict | None = None,
                 bruts = fonction(cfg)
             gardes = [g for g in (clf.retenir(f) for f in bruts) if g]
             retenus += gardes
-            journal.append(dict(date=aujourd_hui, source=nom, etat="OK", lus=len(bruts),
+            journal.append(dict(date=aujourd_hui, heure=heure, source=nom, etat="OK", lus=len(bruts),
                                 retenus=len(gardes), message=""))
             print(f"   {len(bruts)} textes lus, {len(gardes)} retenus")
         except Exception as e:  # noqa: BLE001  — une source en panne ne bloque pas les autres
-            journal.append(dict(date=aujourd_hui, source=nom, etat="ERREUR", lus=0, retenus=0,
+            journal.append(dict(date=aujourd_hui, heure=heure, source=nom, etat="ERREUR", lus=0, retenus=0,
                                 message=f"{type(e).__name__}: {e}"[:300]))
             print(f"   ERREUR : {e}")
             traceback.print_exc()
@@ -187,7 +192,7 @@ def lancer_collecte(sources: list[str] | None = None, cfg: dict | None = None,
     ev = pd.concat([ev, pd.DataFrame(evenements, columns=COLONNES_EVENEMENTS)], ignore_index=True)
     ecrire_csv(ev, F_EVENEMENTS)
 
-    jr = lire_csv(F_JOURNAL, ["date", "source", "etat", "lus", "retenus", "message"])
+    jr = lire_csv(F_JOURNAL, ["date", "heure", "source", "etat", "lus", "retenus", "message"])
     jr = pd.concat([jr, pd.DataFrame(journal)], ignore_index=True).tail(500)
     ecrire_csv(jr, F_JOURNAL)
 

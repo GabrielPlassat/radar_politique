@@ -30,7 +30,7 @@ def version_donnees() -> str:
 def charger(version: str = ""):  # noqa: ARG001 — sert de clé de cache
     textes = lire_csv(F_TEXTES, COLONNES_TEXTES)
     ev = lire_csv(F_EVENEMENTS, COLONNES_EVENEMENTS)
-    jr = lire_csv(F_JOURNAL, ["date", "source", "etat", "lus", "retenus", "message"])
+    jr = lire_csv(F_JOURNAL, ["date", "heure", "source", "etat", "lus", "retenus", "message"])
     return textes, ev, jr
 
 
@@ -164,8 +164,10 @@ if textes.empty:
 with st.sidebar:
     st.header("Dernière collecte")
     if not journal.empty:
-        der = journal[journal["date"] == journal["date"].max()]
-        st.caption(f"le {der['date'].iloc[0]}")
+        # Dernière ligne de chaque source (le journal garde toutes les collectes, dans l'ordre)
+        der = journal.groupby("source", sort=False).tail(1)
+        derniere = der.iloc[-1]
+        st.caption(f"le {derniere['date']}" + (f" à {derniere['heure']}" if derniere["heure"] else ""))
         for _, j in der.iterrows():
             icone = "✅" if j["etat"] == "OK" else "⚠️"
             st.write(f"{icone} **{j['source']}** — {j['retenus']} retenus / {j['lus']} lus")
