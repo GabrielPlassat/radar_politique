@@ -23,9 +23,7 @@ Chaque texte reçoit un **statut** identique à celui du deck (En projet / En vo
 ### 1. Dépôt GitHub
 Le code est sur https://github.com/GabrielPlassat/radar_politique (dépôt **public** pour démarrer).
 
-⚠️ Dépôt public = tout ce qui est enregistré dans `data/` est visible de tous, y compris `annotations.csv`.
-Les textes collectés sont publics, mais **ne pas écrire de notes internes sensibles** dans les colonnes « Responsable » et « À suivre ».
-Pour des notes confidentielles : passer le dépôt en privé (une seule app privée gratuite sur Streamlit), ou déplacer les annotations vers un Google Sheet.
+Le dépôt ne contient que des données publiques (textes collectés). **Les notes de l'équipe n'y sont jamais enregistrées** (voir « Notes confidentielles » plus bas).
 
 ### 2. Lancer la première collecte
 1. Onglet **Actions** → activer les workflows si GitHub le demande.
@@ -37,14 +35,6 @@ La première collecte remplit le radar ; ses textes sont marqués « Initialisat
 ### 3. Publier l'application (Streamlit Community Cloud)
 1. share.streamlit.io → **New app** → choisir le dépôt, fichier `app.py` → **Deploy**.
 2. Avec un dépôt public, l'app est accessible à toute personne qui a le lien.
-3. *(Facultatif, mais recommandé)* Pour que le bouton « Enregistrer mes annotations » écrive directement dans GitHub :
-   - GitHub › Settings › Developer settings › **Fine-grained tokens** › Generate : accès au seul dépôt `radar_politique`, permission **Contents : Read and write**.
-   - Streamlit › app › Settings › **Secrets** :
-     ```toml
-     GITHUB_TOKEN = "github_pat_..."
-     GITHUB_REPO = "GabrielPlassat/radar_politique"
-     ```
-   Sans jeton, les annotations restent dans la session ; on peut alors les télécharger et déposer `annotations.csv` dans `data/`.
 
 ### 4. Tester / régler dans Colab
 Ouvrir `radar_colab.ipynb` dans Google Colab (Fichier › Ouvrir un notebook › GitHub). Il lance les tests, une collecte, et montre ce que chaque thème ramène, pour ajuster les mots-clés.
@@ -52,9 +42,15 @@ Ouvrir `radar_colab.ipynb` dans Google Colab (Fichier › Ouvrir un notebook ›
 ## L'application
 
 - **🔔 Nouveautés** : nouveaux textes, nouvelles étapes et changements de statut des 7 / 14 / 30 / 90 derniers jours.
-- **📋 Textes** : tous les textes du radar, filtrables. Colonnes à remplir par l'équipe : *Suivi*, *Priorité*, *Responsable*, *À suivre*.
+- **📋 Textes** : tous les textes du radar, filtrables. Colonnes de notes : *Suivi*, *Priorité*, *Responsable*, *À suivre*.
 - **🔎 Fiche texte** : parcours complet (Assemblée), rapporteurs, lien officiel, et **acteurs financés par l'ADEME** sur le sujet (bénéficiaires, montants, dispositifs). Lien vers la carte des aides mobilité.
 - **🗓️ Synthèse du mois** : trame Markdown de la slide « Actu réglementaire » (Exécutif / Législatif / Europe × statut), avec les notes « À suivre ».
+
+## Notes confidentielles
+Les notes (*Suivi*, *Priorité*, *Responsable*, *À suivre*) restent dans le navigateur, le temps de la séance. Elles ne sont envoyées ni sur GitHub ni sur le serveur Streamlit.
+- **En fin de séance** : menu de gauche « 🔒 Mes notes » › **Notes à recharger (.csv)**. Ce fichier est à garder (poste, SharePoint de l'équipe).
+- **En début de séance** : « Recharger mon fichier de notes » › choisir ce fichier.
+- **Notes lisibles (Word)** : un document à partager en interne, avec un bloc par texte annoté (priorité, responsable, à suivre, statut, étape, lien).
 
 ## Régler le radar : `config/themes.yaml`
 Se modifie directement dans GitHub (crayon ✏️).
@@ -75,7 +71,6 @@ radar/ademe.py             recherche dans les aides ADEME
 data/textes.csv            état actuel de chaque texte (mis à jour par la collecte)
 data/evenements.csv        historique des changements détectés
 data/journal_collecte.csv  état de chaque source à chaque collecte
-data/annotations.csv       suivi / priorité / responsable / notes de l'équipe
 tests/                     tests hors ligne
 radar_colab.ipynb          notebook de test et de réglage
 ```
@@ -85,4 +80,4 @@ radar_colab.ipynb          notebook de test et de réglage
 - **Statuts** : déduits automatiquement des codes d'étape ; un rejet en première lecture est classé « Abandonné ou rejeté » même si la navette peut continuer (cas du PLF). Vérifier avant de reprendre dans le deck.
 - **Consultations publiques MTE** : le site peut refuser les robots. Si la source reste en erreur dans le journal, la désactiver (`actif: false`).
 - **Aides ADEME** : recherche par mots dans l'objet et le dispositif des aides, limitée aux 100 plus grosses aides par expression.
-- **Hébergement** : GitHub et Streamlit Cloud sont des services externes. Valider avec la DSI avant d'y stocker des notes internes.
+- **Notes** : rien n'est sauvegardé automatiquement. Penser à télécharger le fichier de notes avant de fermer l'onglet.

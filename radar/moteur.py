@@ -173,9 +173,6 @@ def lancer_collecte(sources: list[str] | None = None, cfg: dict | None = None,
     jr = pd.concat([jr, pd.DataFrame(journal)], ignore_index=True).tail(500)
     ecrire_csv(jr, F_JOURNAL)
 
-    if not F_ANNOTATIONS.exists():
-        ecrire_csv(pd.DataFrame(columns=COLONNES_ANNOTATIONS), F_ANNOTATIONS)
-
     resume = dict(textes=len(textes),
                   nouveaux=sum(e["evenement"] == "Nouveau texte" for e in evenements),
                   changements=sum(e["evenement"] in ("Nouvelle étape", "Changement de statut")

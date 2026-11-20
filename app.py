@@ -1,16 +1,15 @@
 """Radar politiques publiques — Service Transport et Mobilité (ADEME)
 Lancer en local / Colab : streamlit run app.py
 """
-import base64
+import io
 import datetime as dt
 import json
 
 import pandas as pd
-import requests
 import streamlit as st
 
 from radar.ademe import CARTE_AIDES_MOBILITE, chercher_aides, synthese_beneficiaires
-from radar.moteur import (COLONNES_ANNOTATIONS, COLONNES_EVENEMENTS, COLONNES_TEXTES, F_ANNOTATIONS,
+from radar.moteur import (COLONNES_ANNOTATIONS, COLONNES_EVENEMENTS, COLONNES_TEXTES,
                           F_EVENEMENTS, F_JOURNAL, F_TEXTES, charger_config, lire_csv)
 from radar.sources import STATUTS
 
@@ -29,39 +28,57 @@ def charger():
 
 
 def annotations() -> pd.DataFrame:
+    """Notes de l'équipe : gardées dans la session du navigateur, JAMAIS envoyées sur GitHub."""
     if "annotations" not in st.session_state:
-        a = lire_csv(F_ANNOTATIONS, COLONNES_ANNOTATIONS)
-        a["suivi"] = a["suivi"].astype(str).str.lower().isin(["true", "1", "oui", "x"])
-        st.session_state.annotations = a
+        st.session_state.annotations = pd.DataFrame(columns=COLONNES_ANNOTATIONS).astype({"suivi": bool})
     return st.session_state.annotations
 
 
-def enregistrer_annotations(a: pd.DataFrame) -> str:
-    """Enregistre dans GitHub si un jeton est configuré, sinon propose un téléchargement."""
+def lire_fichier_notes(fichier) -> pd.DataFrame:
+    a = pd.read_csv(fichier, dtype=str, keep_default_na=False)
+    for c in COLONNES_ANNOTATIONS:
+        if c not in a.columns:
+            a[c] = ""
+    a["suivi"] = a["suivi"].astype(str).str.lower().isin(["true", "1", "oui", "x"])
+    return a[COLONNES_ANNOTATIONS]
+
+
+def notes_utiles(a: pd.DataFrame) -> pd.DataFrame:
+    """Ne garde que les textes cochés « suivi » ou qui portent une note."""
     a = a.copy()
     a["suivi"] = a["suivi"].fillna(False).astype(bool)
-    notes = a[["priorite", "responsable", "a_suivre"]].fillna("").astype(str).apply(lambda s: s.str.strip())
-    a = a[a["suivi"] | (notes != "").any(axis=1)]  # on ne garde que les lignes annotées
-    csv = a[COLONNES_ANNOTATIONS].to_csv(index=False)
-    try:
-        F_ANNOTATIONS.write_text(csv, encoding="utf-8")
-    except OSError:
-        pass
-    sec = st.secrets if hasattr(st, "secrets") else {}
-    try:
-        jeton, depot = sec["GITHUB_TOKEN"], sec["GITHUB_REPO"]
-    except Exception:  # noqa: BLE001
-        return "local"
-    branche = sec.get("GITHUB_BRANCH", "main")
-    url = f"https://api.github.com/repos/{depot}/contents/data/annotations.csv"
-    h = {"Authorization": f"Bearer {jeton}", "Accept": "application/vnd.github+json"}
-    r = requests.get(url, headers=h, params={"ref": branche}, timeout=30)
-    corps = {"message": "Annotations mises à jour depuis l'application", "branch": branche,
-             "content": base64.b64encode(csv.encode("utf-8")).decode()}
-    if r.ok:
-        corps["sha"] = r.json()["sha"]
-    p = requests.put(url, headers=h, json=corps, timeout=30)
-    return "github" if p.ok else f"erreur GitHub {p.status_code} : {p.text[:200]}"
+    remplis = a[["priorite", "responsable", "a_suivre"]].fillna("").astype(str).apply(lambda s: s.str.strip())
+    return a[a["suivi"] | (remplis != "").any(axis=1)][COLONNES_ANNOTATIONS]
+
+
+def notes_en_word(a: pd.DataFrame, textes: pd.DataFrame) -> bytes:
+    """Document Word lisible : un bloc par texte annoté, classé par priorité."""
+    from docx import Document
+    from docx.shared import Pt
+
+    doc = Document()
+    doc.styles["Normal"].font.size = Pt(11)
+    doc.add_heading("Radar politiques publiques STM — notes de suivi", level=1)
+    doc.add_paragraph(f"Export du {dt.date.today():%d/%m/%Y}. Document interne — ne pas diffuser.")
+    t = notes_utiles(a).merge(textes, on="id", how="left").fillna("")
+    ordre = {"Haute": 0, "Moyenne": 1, "Basse": 2}
+    t = t.assign(_o=t["priorite"].map(ordre).fillna(3)).sort_values(["_o", "categorie", "titre"])
+    if t.empty:
+        doc.add_paragraph("Aucun texte annoté.")
+    for _, x in t.iterrows():
+        doc.add_heading(x["titre"] or x["id"], level=2)
+        for libelle, valeur in [("Priorité", x["priorite"]), ("Responsable", x["responsable"]),
+                                ("À suivre", x["a_suivre"]), ("Statut", x["statut"]),
+                                ("Étape", f"{x['etape']} ({x['date_etape']})" if x["etape"] else ""),
+                                ("Catégorie / source", f"{x['categorie']} — {x['type']} ({x['source']})"),
+                                ("Rapporteur(s)", x["rapporteurs"]), ("Thèmes", x["themes"]), ("Lien", x["url"])]:
+            if str(valeur).strip(" ()—"):
+                p = doc.add_paragraph()
+                p.add_run(f"{libelle} : ").bold = True
+                p.add_run(str(valeur))
+    tampon = io.BytesIO()
+    doc.save(tampon)
+    return tampon.getvalue()
 
 
 @st.cache_data(ttl=3600, show_spinner="Recherche dans l'open data ADEME…")
@@ -102,6 +119,21 @@ with st.sidebar:
             st.write(f"{icone} **{j['source']}** — {j['retenus']} retenus / {j['lus']} lus")
             if j["etat"] != "OK":
                 st.caption(j["message"])
+    st.divider()
+    st.header("🔒 Mes notes")
+    st.caption("Confidentielles : jamais enregistrées sur GitHub ni sur le serveur. "
+               "Rechargez votre fichier en début de séance, téléchargez-le en fin de séance.")
+    depot = st.file_uploader("Recharger mon fichier de notes (.csv)", type="csv")
+    if depot is not None and st.session_state.get("fichier_notes") != depot.file_id:
+        st.session_state.annotations = lire_fichier_notes(depot)
+        st.session_state.fichier_notes = depot.file_id
+    nb_notes = len(notes_utiles(annotations()))
+    st.write(f"{nb_notes} texte(s) annoté(s)")
+    st.download_button("⬇️ Notes à recharger (.csv)", notes_utiles(annotations()).to_csv(index=False),
+                       f"notes_radar_{dt.date.today():%Y-%m-%d}.csv", disabled=nb_notes == 0)
+    st.download_button("⬇️ Notes lisibles (Word)", notes_en_word(annotations(), textes),
+                       f"notes_radar_{dt.date.today():%Y-%m-%d}.docx", disabled=nb_notes == 0,
+                       mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     st.divider()
     st.metric("Textes dans le radar", len(textes))
     st.metric("Textes marqués « suivi »", int(annotations()["suivi"].sum()))
@@ -163,7 +195,7 @@ with onglets[1]:
     vue["score"] = pd.to_numeric(vue["score"], errors="coerce")
     vue = vue.sort_values(["suivi", "dernier_changement", "date_etape"], ascending=False)
 
-    st.caption(f"{len(vue)} textes. Cochez « Suivi » et complétez les colonnes de droite, puis « Enregistrer ».")
+    st.caption(f"{len(vue)} textes. Cochez « Suivi » et complétez les colonnes de droite.")
     edite = st.data_editor(
         vue[["suivi", "priorite", "responsable", "a_suivre", "titre", "statut", "etape", "date_etape",
              "categorie", "type", "source", "themes", "rapporteurs", "dernier_changement", "url", "id"]],
@@ -179,20 +211,11 @@ with onglets[1]:
             "url": st.column_config.LinkColumn("Lien", display_text="ouvrir", width="small"),
             "date_etape": "Date étape", "dernier_changement": "Changé le", "id": None,
         })
-    if st.button("💾 Enregistrer mes annotations", type="primary"):
-        modifs = edite[["id", "suivi", "priorite", "responsable", "a_suivre"]]
-        reste = a[~a["id"].isin(modifs["id"])]
-        st.session_state.annotations = pd.concat([reste, modifs], ignore_index=True)
-        res = enregistrer_annotations(st.session_state.annotations)
-        if res == "github":
-            st.success("Annotations enregistrées dans GitHub (partagées avec l'équipe).")
-        elif res == "local":
-            st.info("Enregistré pour cette session. Pour partager avec l'équipe, téléchargez le fichier "
-                    "et déposez-le dans `data/` sur GitHub, ou configurez le jeton GitHub (voir README).")
-        else:
-            st.error(res)
-    st.download_button("⬇️ Télécharger annotations.csv",
-                       annotations()[COLONNES_ANNOTATIONS].to_csv(index=False), "annotations.csv")
+    # Les modifications du tableau sont gardées dans la session (pas d'envoi sur GitHub)
+    modifs = edite[["id", "suivi", "priorite", "responsable", "a_suivre"]]
+    st.session_state.annotations = pd.concat([a[~a["id"].isin(modifs["id"])], modifs], ignore_index=True)
+    st.caption("🔒 Vos notes restent dans ce navigateur. Téléchargez-les avant de fermer l'onglet "
+               "(menu de gauche « Mes notes »).")
     st.download_button("⬇️ Télécharger la vue filtrée (CSV)", vue.drop(columns=["historique"]).to_csv(index=False),
                        "radar_textes.csv")
 
