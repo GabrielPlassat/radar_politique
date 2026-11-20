@@ -1,9 +1,11 @@
 """Radar politiques publiques — Service Transport et Mobilité (ADEME)
 Lancer en local / Colab : streamlit run app.py
 """
-import io
 import datetime as dt
+import io
 import json
+
+import requests
 
 import pandas as pd
 import streamlit as st
@@ -81,6 +83,43 @@ def notes_en_word(a: pd.DataFrame, textes: pd.DataFrame) -> bytes:
     return tampon.getvalue()
 
 
+DEPOT_GITHUB = "GabrielPlassat/radar_politique"
+WORKFLOW = "collecte.yml"
+DELAI_MIN_MINUTES = 30
+
+
+def secret(nom: str, defaut=None):
+    try:
+        return st.secrets[nom]
+    except Exception:  # noqa: BLE001
+        return defaut
+
+
+def forcer_collecte() -> tuple[str, str]:
+    """Demande à GitHub de lancer la collecte. Renvoie (niveau, message)."""
+    jeton = secret("GITHUB_TOKEN_ACTIONS")
+    if not jeton:
+        return "warning", ("Bouton non configuré : ajouter `GITHUB_TOKEN_ACTIONS` dans les secrets "
+                           "de l'app Streamlit (voir README).")
+    h = {"Authorization": f"Bearer {jeton}", "Accept": "application/vnd.github+json"}
+    base = f"https://api.github.com/repos/{DEPOT_GITHUB}/actions/workflows/{WORKFLOW}"
+    r = requests.get(f"{base}/runs", headers=h, params={"per_page": 1}, timeout=30)
+    if r.ok and r.json().get("workflow_runs"):
+        run = r.json()["workflow_runs"][0]
+        if run["status"] in ("queued", "in_progress", "waiting", "pending"):
+            return "info", f"Une collecte est déjà en cours ([suivre]({run['html_url']}))."
+        debut = dt.datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+        ecart = (dt.datetime.now(dt.timezone.utc) - debut).total_seconds() / 60
+        if ecart < DELAI_MIN_MINUTES:
+            return "info", (f"Dernière collecte lancée il y a {ecart:.0f} min. "
+                            f"Merci d'attendre {DELAI_MIN_MINUTES} min entre deux collectes.")
+    p = requests.post(f"{base}/dispatches", headers=h, json={"ref": "main"}, timeout=30)
+    if p.status_code == 204:
+        return "success", ("Collecte lancée ✅ Elle prend 3 à 6 minutes. Rechargez ensuite la page "
+                           f"([suivre sur GitHub](https://github.com/{DEPOT_GITHUB}/actions)).")
+    return "error", f"GitHub a refusé ({p.status_code}) : {p.text[:200]}"
+
+
 @st.cache_data(ttl=3600, show_spinner="Recherche dans l'open data ADEME…")
 def aides_en_cache(expressions: tuple) -> pd.DataFrame:
     return chercher_aides(list(expressions))
@@ -124,6 +163,19 @@ with st.sidebar:
             st.write(f"{icone} **{j['source']}** — {j['retenus']} retenus / {j['lus']} lus")
             if j["etat"] != "OK":
                 st.caption(j["message"])
+    with st.expander("🔄 Forcer la collecte"):
+        st.caption("Relance tout de suite la collecte sur GitHub, sans attendre demain matin.")
+        mdp_attendu = secret("COLLECTE_MOT_DE_PASSE")
+        mdp = st.text_input("Mot de passe", type="password") if mdp_attendu else None
+        if st.button("Lancer la collecte maintenant"):
+            if mdp_attendu and mdp != mdp_attendu:
+                st.error("Mot de passe incorrect.")
+            else:
+                niveau, message = forcer_collecte()
+                getattr(st, niveau)(message)
+        if st.button("Recharger les données affichées"):
+            st.cache_data.clear()
+            st.rerun()
     st.divider()
     st.header("🔒 Mes notes")
     st.caption("Confidentielles : jamais enregistrées sur GitHub ni sur le serveur. "

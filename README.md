@@ -36,6 +36,15 @@ La première collecte remplit le radar ; ses textes sont marqués « Initialisat
 1. share.streamlit.io → **New app** → choisir le dépôt, fichier `app.py` → **Deploy**.
 2. Avec un dépôt public, l'app est accessible à toute personne qui a le lien.
 
+3. *(Facultatif)* Bouton **« Forcer la collecte »** (menu de gauche) :
+   - GitHub › Settings › Developer settings › **Fine-grained tokens** › Generate : accès au seul dépôt `radar_politique`, permission **Actions : Read and write** (aucune autre). Ce jeton peut seulement lancer la collecte, pas modifier le dépôt.
+   - Streamlit › app › Settings › **Secrets** :
+     ```toml
+     GITHUB_TOKEN_ACTIONS = "github_pat_..."
+     COLLECTE_MOT_DE_PASSE = "un-mot-de-passe"   # facultatif, conseillé car l'app est publique
+     ```
+   - Une collecte au plus toutes les 30 minutes. Après 3 à 6 minutes, « Recharger les données affichées ».
+
 ### 4. Tester / régler dans Colab
 Ouvrir `radar_colab.ipynb` dans Google Colab (Fichier › Ouvrir un notebook › GitHub). Il lance les tests, une collecte, et montre ce que chaque thème ramène, pour ajuster les mots-clés.
 
